@@ -132,7 +132,6 @@ library(tidyverse)
 library(sf)
 library(rnaturalearth)
 library(rnaturalearthdata)
-library(rnaturalearthhires)
 ```
 
 
@@ -172,6 +171,11 @@ ggplot(data = world) +
 Now let's add a title and subtitle to our map. 
 
 **Challenge 1: Change the subtitle in the code to your name instead of mine. Feel free to change the title and subtitle to another language!**
+```{r}
+ggplot(data = world) +
+  geom_sf() +
+  ggtitle("Counties of the World", subtitle = "Created by Pamela Oda")
+```
 
 ```{r}
 ggplot(data = world) +
@@ -195,6 +199,18 @@ The code chunk below will create a new dataframe called `world_without_antarctic
 **Challenge 2: Instead of removing antarctica, remove Australia from the map**. Remember to change the name of the dataframe to something like `world_without_Australia`. 
 
 Nothing against Australia! We're just learning how to navigate dataframes and make choices about our maps.
+```{r}
+world_without_Australia <- world %>%
+  filter(iso_a3 != "AUS")
+
+ggplot() +
+  geom_sf(data = world_without_Australia)
+
+ggplot() +
+  geom_sf(data = world_without_Australia) +
+  ggtitle("Countries of the World", subtitle = "without Australia")
+```
+
 ```{r}
 world_without_antarctica <- world %>% 
   filter(iso_a3 != "ATA")
@@ -224,6 +240,19 @@ The colors we are using here are what are known as "hex colors", because they ar
 
 **Challenge 3: Try out different colors on your map until you find a combination that you like.**
 ```{r}
+ggplot() +
+  geom_sf(data = world_without_antarctica,
+          fill = "#eeb4b4", color = "#bc8f8f", size = 0.25) +
+  ggtitle("Countries of the World", subtitle = "without Antarctica")
+
+ggplot() +
+  geom_sf(data = world_without_antarctica,
+          fill = "#eeb4b4", color = "#bc8f8f", size = 0.25) +
+  ggtitle("Countries of the World", subtitle = "without Antarctica") +
+  theme_void()
+```
+
+```{r}
 ggplot() + 
   geom_sf(data = world_without_antarctica, 
           fill = "#669438", color = "#32481B", size = 0.25) +
@@ -244,6 +273,15 @@ We can also use our variables (columns in our dataframe) to add color to each co
 Notice that the `mapcolor7` column only provides numbers, so we need to add a color scale, or palette, to associate with the numbers. This is similar to what we will do when we start making choropleth maps using variables with data about countries. Since our data is categorical (also known as discrete or qualitative) in this case, we want to use a color palette that is designed for use with discrete data. 
 
 **Challenge 4: Try a few different discrete [color palettes](https://jmsallan.netlify.app/blog/the-brewer-palettes/) and choose one that you like.**
+```{r}
+ggplot() +
+  geom_sf(data = world_without_antarctica,
+          aes(fill = as.factor(mapcolor7)),
+          color = "#401D16", size = 0.25) +
+  scale_fill_brewer(palette = "Pastel1") +
+  guides(fill = "none") +
+  theme_void()
+```
 
 We are using Brewer color palettes (created by Cynthia A. Brewer) in this class, which are designed specifically for map-making.
 
@@ -289,6 +327,14 @@ What do you notice about the new map we made compared to the WGS 84 map?
 The Orthographic Azimuthal projection is a good option if you want to choose the center of your map, though you won't be able to see the other half of the world. For this, you will need to use a more complex bit of code for the `crs` argument, called a [PROJ4](https://proj.org/en/9.4/usage/projections.html) string. You will provide the `proj` alias, in this case `ortho`, and then the latitude (`lat_0`) and longitude (`lon_0`) of the "origin", or center, of your map. In the example below, I have centered the map on my hometown of Lubbock, Texas. 
 
 **Challenge 5: Look up the latitude and longitude of your hometown (or your current home), and change the PROJ4 string `lat_0` and `lon_0`. Then change the title to reflect the place you are centering.**
+```{r}
+ggplot(data = world) +
+  geom_sf(fill = "#eeb4b4", color = "#bc8f8f", size = 0.25) +
+  coord_sf(crs = "+proj=ortho +lat_0=19 +lon_0=-155 ") +
+  ggtitle("Hilo, HI as the Center of the World", subtitle = "Orthographic Azimuthal") +
+  theme_void()
+```
+
 ```{r}
 ggplot(data = world) +
   geom_sf(fill = "#669438", color = "#32481B", size = 0.25) +
