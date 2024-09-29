@@ -80,6 +80,9 @@ available_features()
 Each feature has subcategories, called "tags". The `available_tags()` function lists out the tags associated with each feature. 
 
 **Challenge 1: Find a different feature from the `available_features()` list and use the `available_tags()` function to list all the associated tags.
+```{r}
+available_tags("emergency")
+```
 
 ```{r}
 available_tags("healthcare")
@@ -90,6 +93,10 @@ available_tags("healthcare")
 The first step in creating an `osmdata` query is defining the geographical area we want to include in the query. This can be done by defining a bounding box that defines a geographical area by its bounding latitudes and longitudes. The osmdata package provides a function `getbb()` to retrieve the bounding box of a place using its name. We can now create the bounding box of Maui island in Hawaiʻi.
 
 **Challenge 2: Create a bounding box for your project target area.**
+```{r}
+bb <- getbb("California")
+bb
+```
 
 ```{r}
 bb <- getbb("Maui")
@@ -117,8 +124,6 @@ schools <- bb %>%
   opq() %>%
   add_osm_feature(key = "amenity", value = "school") %>%
   osmdata_sf()
-
-
 ```
 
 ## Understanding the osmdata object
@@ -156,6 +161,13 @@ First let's create a map with just the polygons for our schools, as shown below.
 
 After reading through the whole tutorial, come back and do:
 **Challenge 3: Update the bounding box in `coord_sf` with your target area.** 
+```{r}
+ggplot() +
+  geom_sf(data = schools$osm_polygons) +
+  geom_sf_text(data = schools$osm_polygons, aes(label = name), size = 1, hjust = 0) +
+  coord_sf(xlim = c(-124.48200, -114.1308), ylim = c(32.52952,   42.0095), expand = FALSE) +
+  theme_minimal()
+```
 
 Use the latitude and longitude from creating your bounding box in Challenge 2. 
 
@@ -174,6 +186,14 @@ The `osmdata` package can also be used to download other spatial features such a
 After reading through the whole tutorial, come back and do:
 
 **Challenge 4: Run the code below to update with your target area bounding box.** 
+```{r}
+#retrieving data of streets in California
+streets <- bb %>%
+  opq() %>%
+  add_osm_feature(key = "place", value = "city") %>%
+  osmdata_sf()
+```
+
 ```{r}
 
 # retrieving data of streets on Maui
@@ -201,6 +221,19 @@ Then we use the `ggplot2` package to visualize each of these features along with
 After reading through the whole tutorial, come back and do:
 
 **Challenge 5: Change the title and bounding box in `coord_sf` to your target area.**
+```{r}
+ggplot() +
+  geom_sf(data = streets$osm_lines, inherit.aes = FALSE, color = "#ffbe7f", size = .4, alpha = .8) +
+  geom_sf(data = schools$osm_polygons, inherit.aes = FALSE, colour = "red", fill = "red", alpha = .5, size = 0.1) +
+  coord_sf(xlim = c(-124.48200, -114.1308), ylim = c(32.52952,   42.0095), expand = TRUE) +
+  geom_sf_text(data = schools$osm_polygons, aes(label = name), size = 2, hjust = 0) +
+  theme_bw() +
+  labs(
+    title = "Schools in California",
+    x = "Longitude",
+    y = "Latitude"
+  )
+```
 
 ```{r}
 # visualising all retrieved features over each other to form a map of Maui
@@ -227,6 +260,14 @@ However, the schools that are clustered together are hard to see and their label
 We can use the `leaflet` package to visualize an interactive map of the schools on Maui. Notice that if you hover over the polygon, the name of the school will pop up.
 
 **Challenge 6: Run the code below using the data you retrieved for your target area.** The `leaflet` function automatically zooms into the extent of the data, so it should update to show your target area automatically.
+```{r}
+leaflet() %>%
+  addTiles() %>%
+  addPolygons(
+    data = schools$osm_polygons,
+    label = schools$osm_polygons$name
+  )
+```
 
 ```{r}
 leaflet() %>%
