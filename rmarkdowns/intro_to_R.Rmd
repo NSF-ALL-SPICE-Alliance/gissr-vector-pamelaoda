@@ -108,6 +108,19 @@ my_age + 5 # how old will you be in 5 years?
 #### <span style="color: red;">Challenge 1</span>
 Create a my_name variable with your name assigned to the variable instead of "Victoria DelaCruz". Then, create a my_age variable with your age. 
 
+1. my_name
+```{r}
+my_name <- "Pamela Oda"
+my_name
+```
+
+2. my_age
+```{r}
+my_age = 22
+my_age
+my_age + 5 
+```
+
 #### Different Types of Data
 
 Understanding the different types of data is crucial when building out your visualizations and throughout the data analysis process. It is super useful when trying to figure out what graph to use or what story you're trying to tell through your data.
@@ -294,6 +307,13 @@ What if we want to subset specific rows? We can do this by using the filter func
 #### <span style="color: red;">Challenge 2</span>
 Using the `select()` function, select two new SDG goal scores. Assign it to a variable named `SDG_scores`. 
 
+```{r}
+SDG_scores <- 
+  sdr_data %>%
+  select(goal_10_score, goal_11_score)
+SDG_scores
+```
+
 *2. filter()*
 
 Similarly to select, `filter()` can be used to extract specific rows. Let's try this out by filtering our data for those within the Oceania region.
@@ -313,6 +333,13 @@ Notes:
 
 #### <span style="color: red;">Challenge 3</span>
 Using the `filter()` function, filter for another region other than Oceania. Assign it to a variable named `new_region`. 
+
+```{r}
+new_region <- 
+  sdr_data %>%
+  filter(regions_used_for_the_sdr == "MENA")
+new_region
+```
 
 **Important**
 
