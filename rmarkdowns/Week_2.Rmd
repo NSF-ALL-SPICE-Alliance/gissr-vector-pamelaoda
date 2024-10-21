@@ -75,6 +75,13 @@ Choose state/province/region/island that you want to focus on for your final pro
 We can create a "bounding box" for our existing `world` dataset that will "zoom in" to the general area around our target area. First, you need to decide what the boundaries of your map will be. [Google Earth](https://earth.google.com/web/) is a good tool to find latitudes and longitudes. Make sure you are making the bounding box big enough that you can see the whole region around your target area.
 
 **Challenge 1: Create a bounding box for your region**. This should be the region around the your target area. 
+```{r}
+ggplot(data = world) +
+  geom_sf() + 
+  coord_sf(xlim = c(-95.5, -70.5), ylim = c(23.25, 40.75), expand = TRUE) +
+  ggtitle("Southeast Region of the United States")+
+  theme_void()
+```
 
 ```{r}
 ggplot(data = world) +
@@ -90,6 +97,9 @@ This gives us a very simple map which doesn't provide much information. We will 
 Let's create a layer that includes state/province level data. 
 
 **Challenge 2: Create a new layer with state/province data for your the country of your final project area**. 
+```{r}
+states <- (ne_states(country = "United States of America"))
+```
 
 ```{r}
 states <- (ne_states(country = "United States of America"))
@@ -98,6 +108,14 @@ states <- (ne_states(country = "United States of America"))
 Now we can add this layer to our existing map with a second `geom_sf`. 
 
 **Challenge 3: Add your new "state" layer to the map.**
+```{r}
+ggplot() +
+  geom_sf(data = world) +
+  geom_sf(data = states) +
+  coord_sf(xlim = c(-95.5, -70.5), ylim = c(23.25, 40.75), expand = TRUE) +
+  ggtitle("Southeast Region of the United States")+
+  theme_void()
+```
 
 ```{r}
 ggplot() +
@@ -159,6 +177,16 @@ rivers50 <- ne_download(
 Now let's add the lakes and rivers to our map. 
 
 **Challenge 4: Update the `coord_sf` with your bounding box and your `ggtitle` with your own title.** The `states` layer should also now be updated with your new `states` dataframe you created in Challenge 2. 
+```{r}
+ggplot() +
+  geom_sf(data = world) +
+  geom_sf(data = states) +
+  geom_sf(data = lakes50) +
+  geom_sf(data = rivers50) +
+  coord_sf(xlim = c(-95.5, -70.5), ylim = c(23.25, 40.75), expand = TRUE) +
+  ggtitle("Southeast Region of the United States")+
+  theme_void()
+```
 
 ```{r}
 ggplot() +
@@ -175,6 +203,17 @@ ggplot() +
 Now let's choose colors for all of our layers, and add some labels from the `states` layer with a `geom_text` layer. 
 
 **Challenge 5: Update the `coord_sf` with your bounding box and your `ggtitle` with your own title. Change at least one of the colors in the `ggplot` code**. You can use color names like I have here, or you can specify a color using the hex code.
+```{r}
+ggplot() + 
+  geom_sf(data = world, fill = "lightgray") +
+  geom_sf(data = states, fill = "#ffd39b", size = 0.25) + 
+  geom_sf(data = lakes50, fill = "#00008b", color = "#318ce7") +
+  geom_sf(data = rivers50, color = "#458b00", size = 0.15) +
+  geom_sf_text(data = states, aes(label = name), size = 1, fontface = "bold", nudge_y = states$nudge_y) +
+  coord_sf(xlim = c(-95.5, -70.5), ylim = c(23.25, 40.75), expand = TRUE) +
+  ggtitle("Southeast Region of the United States")+
+  theme_void()
+```
 
 ```{r}
 ggplot() +
@@ -192,6 +231,10 @@ ggplot() +
 For our final addition, let's highlight the specific area we will be focusing on. To do this, we will create a new layer that only includes the state (or province) where we will focus on for our project. 
 
 **Challenge 6: Update the name of the state/province that you are focused on for your project.** Remember to change the name of the data object (to the left of the `<-`) to your target area. 
+```{r}
+southeast <- states %>%
+  filter(name %in% c("Alabama", "Arkansas", "Florida", "Georgia", "Kentucky", "Louisiana", "Maryland", "Mississippi", "North Carolina", "South Carolina", "Tennessee", "Virginia", "West Virginia"))
+```
 
 ```{r}
 washington <- states %>%
@@ -201,6 +244,18 @@ washington <- states %>%
 Now let's add that as a layer (the last `geom_sf` in our code) on our map, use the same fill color as the other states, and color the border red. We want this layer to be on top of the other layers on our map, so it should come after (below) the other `geom_sf` lines of our code. The order of our layers is very important!
 
 **Challenge 7: Update the code below with all of your changes.** You should be changing at least one color, the name of the data object with your target area (in the fifth `geom_sf`), the bounding box, and the title and subtitle. 
+```{r}
+ggplot() +
+  geom_sf(data = world, fill = "lightgray") +
+  geom_sf(data = states, fill = "#ffd39b", size = 0.25) + 
+  geom_sf(data = lakes50, fill = "#00008b", color = "#318ce7") +
+  geom_sf(data = rivers50, color = "#458b00", size = 0.15) +
+  geom_sf_text(data = southeast, aes(x = longitude, y = latitude, label = name), size = 1, fontface = "bold", nudge_y = states$nudge_y) +
+  coord_sf(xlim = c(-95.5, -70.5), ylim = c(23.25, 40.75), expand = TRUE) +
+  ggtitle("States", subtitle = "in the Southeast Region of the United States")+
+  theme_void()
+  
+```
 
 ```{r}
 ggplot() +

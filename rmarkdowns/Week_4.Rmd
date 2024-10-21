@@ -66,7 +66,6 @@ First, load the necessary libraries:
 library(rinat)
 library(sf)
 library(tidyverse)
-library(tmap)
 library(leaflet)
 library(osmdata)
 library(plotly)
@@ -256,11 +255,112 @@ leaflet(inat_obs_sf) %>%
 For your challenges this week, create the necessary code chunks below. You can copy/paste the code chunks from the tutorial and edit them as needed to complete the Challenges. 
 
 **Challenge 1: Find the `place_id` that corresponds to your target area and choose a genus or species you want to map and find the `taxon_id`.**
+```{r}
+inat_obs_df <- get_inat_obs(taxon_id = 167310,
+                            place_id = 11,
+                            quality = "research",
+                            geo = TRUE,
+                            maxresults = 100)
+save(inat_obs_df, file = "hawaii_ihi_inat.Rdata")
+```
 
 **Challenge 2: Create a static map using the `ggplot` function of your target area and target genus/species.**
+```{r}
+ggplot() +
+  geom_point(data = inat_obs_df, aes(x = longitude, y = latitude, color = common_name, text = common_name))
+```
+
+```{r}
+oahu_bb <- getbb("Oahu")
+oahu_bb
+```
+
+```{r}
+#retrieving data of streets on Oahu
+oahu_streets <- oahu_bb %>%
+  opq() %>%
+  add_osm_feature("highway", c("motorway", "primary", "secondary", "tertiary")) %>%
+  osmdata_sf()
+
+#retrieving data of small streets on Oahu
+oahu_small_streets <- oahu_bb %>%
+  opq() %>%
+  add_osm_feature(key = "highway", value = c("residential", "living_street", "unclassified", "service", "footway")) %>%
+  osmdata_sf()
+
+#retrieving data of coastline of Oahu
+oahu_coast <- oahu_bb %>%
+  opq() %>%
+  add_osm_feature(key = "natural", value = "coastline") %>%
+  osmdata_sf()
+
+#retrieving data of national parks in Oahu
+oahu_np <- oahu_bb %>%
+  opq() %>%
+  add_osm_feature(key = "boundary", value = "national_park") %>%
+  osmdata_sf()
+
+#retrieving data of protected areas in Oahu
+oahu_protected <- oahu_bb %>%
+  opq() %>%
+  add_osm_feature(key = "boundary", value = "protected_area") %>%
+  osmdata_sf()
+```
+
+```{r}
+p <- ggplot() +
+  geom_sf(data = oahu_streets$osm_lines, inherit.aes = FALSE, color = "#ffbe7f", size = .4, alpha = .8) +
+  geom_sf(data = oahu_coast$osm_lines, inherit.aes = FALSE, color = "black", size = .8, alpha = .5) +
+  geom_sf(data = oahu_np$osm_polygons, inherit.aes = FALSE, color = "brown", size = .2, alpha = .8) +
+  geom_sf(data = oahu_protected$osm_polygons, inherit.aes = FALSE, color = "green", size = .2, alpha = .8) +
+  geom_point(data = inat_obs_df, aes(x = longitude, y = latitude, color = common_name, text = common_name)) + 
+  geom_sf_text(size = 1, data = oahu_protected$osm_polygons, aes(label = name)) + 
+  coord_sf(xlim = c(-158.28058, -157.64863), ylim = c(21.25482, 21.71201), expand = TRUE) + 
+  ggtitle("Ihi on O'ahu", subtitle = "Based on iNaturalist Data as of October 2024") +
+  theme_bw() +
+  labs(
+    color="Common Name",
+    x = "Longitude",
+    y = "Latitude"
+  ) 
+
+p
+```
+
+```{r}
+ggplotly(p,
+         tooltip = c("text"))
+```
 
 **Challenge 3: Create an interactive map using the `leaflet` function of your target area and target genus/species.** 
+```{r}
+inat_obs_popup_sf <- inat_obs_sf %>% 
+  mutate(popup_html = paste0("<p><b>", common_name, "</b><br/>",
+                             "<i>", scientific_name, "</i></p>",
+                             "<p>Observed: ", datetime, "<br/>",
+                             "User: ", user_login, "</p>",
+                             "<p><img src='", image_url, "' style='width:100%;'/></p>")
+  )
+```
 
+```{r}
+htmltools::p("iNaturalist Observations of Ihi on O'ahu",
+             htmltools::br(),
+             inat_obs_popup_sf$datetime %>% 
+               as.Date() %>% 
+               range(na.rm = TRUE) %>% 
+               paste(collapse = " to "),
+             style = "font-weight:bold; font-size:110%;")
+```
+
+```{r}
+leaflet(inat_obs_sf) %>% 
+  setView(lng = -156.3, lat = 20.7, zoom = 12)%>%
+  addTiles() %>% 
+  addCircleMarkers(data = inat_obs_popup_sf,
+                   popup = ~popup_html, 
+                   radius = 5)
+```
 
 # Final Challenge Preparation
 
