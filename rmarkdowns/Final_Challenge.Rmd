@@ -1,7 +1,7 @@
 ---
-title: "Final Challenge Instructions"
-author: "Catherine Brockway"
-date: "`r Sys.Date()`"
+title: "Arrest of the First Seven Days of October 2024 and Correctional Facilities on O'ahu"
+author: "Pamela Oda"
+date: "10-20-2024"
 output: 
   html_document:
     theme: flatly
@@ -14,89 +14,164 @@ knitr::opts_chunk$set(echo = TRUE)
 library("vembedr")
 ```
 
-<img src="`r here::here('Images/ALL-SPICE.png')`" width="240" /> <img src="`r here::here('Images/3_CIFAL.png')`" width="200" />
+As someone that is pursuing a Bachelors of Science in Criminology and Criminal Justice and Data Science, Analytics and Visualization, I hope to pursue a career as a research analyst within the State of Hawai'i criminal justice system, crime analyst or intelligence analyst. In addition, being born and raised in Hawai'i, I wanted to dedicate my project towards something that I think would be valuable to my community. 
 
-Your final challenge in this course is to choose a location that is important to you and to produce maps that illustrate aspects of sustainability and/or resilience in that location. Each map should tell a story that will inspire people to take action to increase sustainability/resilience in your chosen location. 
+## Loading Libraries 
+To start, let's load the necessary libraries to create the maps:
+```{r}
+library(rinat)
+library(sf)
+library(tidyverse)
+library(leaflet)
+library(osmdata)
+library(plotly)
+library(readxl)
+```
 
-This final project can be in any language you are comfortable using. I would love to see projects in your native language if it is not English! If you need help translating the text in your maps, please reach out to the instructor.
+## Creating the Bounding Box of O'ahu
+Now that the necessary libraries are loaded, let's start by creating the bounding box of O'ahu. To create the bounding box, I will use the `osmdata` package function `getbb()` to get the bounding box.
+```{r}
+oahu_bb <- getbb("Oahu")
+oahu_bb
+```
 
-## Target Area
+## Retriving Geographical Data
+Now, with the bounding box and the `osmdata` package, we will retrieve the streets, small streets, coastline, national parks and the protected areas of the Island of O'ahu. This will give us a better idea of the geographical structure of the island.
+```{r}
+#retrieving data of streets on Oahu
+oahu_streets <- oahu_bb %>%
+  opq() %>%
+  add_osm_feature("highway", c("motorway", "primary", "secondary", "tertiary")) %>%
+  osmdata_sf()
 
-Choose a location that is *meaningful to you*. This can be where you currently live, your hometown, where your family is from, etc. I recommend choosing a location that is larger than a neighborhood and smaller than a large country (e.g. United States, China).
+#retrieving data of small streets on Oahu
+oahu_small_streets <- oahu_bb %>%
+  opq() %>%
+  add_osm_feature(key = "highway", value = c("residential", "living_street", "unclassified", "service", "footway")) %>%
+  osmdata_sf()
 
-All of your maps will show data related to this target area, though maps may be at different scales depending on the available data.
+#retrieving data of coastline of Oahu
+oahu_coast <- oahu_bb %>%
+  opq() %>%
+  add_osm_feature(key = "natural", value = "coastline") %>%
+  osmdata_sf()
 
-## Sustainability and Resilience Topics
+#retrieving data of national parks in Oahu
+oahu_np <- oahu_bb %>%
+  opq() %>%
+  add_osm_feature(key = "boundary", value = "national_park") %>%
+  osmdata_sf()
 
-You may choose any topics related to sustainability and/or resilience that you are interested in and that *you can quickly find data for*; you want to focus most of your time on building, improving, and interpreting your maps, not on finding, cleaning, and wrangling data.
+#retrieving data of protected areas in Oahu
+oahu_protected <- oahu_bb %>%
+  opq() %>%
+  add_osm_feature(key = "boundary", value = "protected_area") %>%
+  osmdata_sf()
+```
 
-I recommend using APIs for OpenStreetMap and/or iNaturalist for your first two required maps, since you already know how to use them to retrieve data, and they should have at least some data available for your location. 
+## Creating a Static Map of the Island of O'ahu
+Now that we have the geographical data, let's create the first map of the Island of O'ahu.
+```{r}
+p <- ggplot() +
+  geom_sf(data = oahu_streets$osm_lines, inherit.aes = FALSE, color = "#ffbe7f", size = .4, alpha = .8) +
+  geom_sf(data = oahu_coast$osm_lines, inherit.aes = FALSE, color = "black", size = .8, alpha = .5) +
+  geom_sf(data = oahu_np$osm_polygons, inherit.aes = FALSE, color = "brown", size = .2, alpha = .8) +
+  geom_sf(data = oahu_protected$osm_polygons, inherit.aes = FALSE, color = "green", size = .2, alpha = .8) +
+  geom_sf_text(size = 1, data = oahu_protected$osm_polygons, aes(label = name)) + 
+  coord_sf(xlim = c(-158.28058, -157.64863), ylim = c(21.25482, 21.71201), expand = TRUE) + 
+  ggtitle("Island of O'ahu", subtitle = "Based on iNaturalist Data as of October 2024") +
+  theme_bw() +
+  labs(
+    color="Common Name",
+    x = "Longitude",
+    y = "Latitude"
+  ) 
 
-## The Assignment
+p
+```
+As you can see in the figure above, I created a map that outlines the various geographical features of the Island of O'ahu. The data that was used to create this map came from iNaturalist of the current data that it has of the island. This static map provides the foundation of what the island looks like, highlighting the streets, protected areas, national parks, and so on to give a full picture of the island. 
 
-### Step 1: Edit this RMarkdown ("Final_Challenge.Rmd)
+Unfortunately, being that there are many streets on the island, the map does become clustered when you look at certain areas of the map, making it hard to differentiate the different streets. 
+On the other hand, this map does provide the locations of national parks and protected areas where there are native plants and species. With that said, law enforcement such as the Honolulu Police Department can work with the different organizations in creating protection plans for these areas to ensure the protective of the native plants and species. 
 
-Leave these instructions at the bottom of your .rmd until you have finished the rest of the assignment, so you can easily refer to them. 
+## Creating the October 2024 Arrest Variable
+Now, let's take the necessary steps towards making an interaction map of the Island of O'ahu by creating the variable "October2024_Arrests" and assigning the data set that contains the longitude and latitude of the arrests for the first seven (7) days of October 2024. 
 
-Fill out the YAML header with your project title, your name, and choose a theme that you like. See this [guide](https://rpubs.com/ranydc/rmarkdown_themes) for help with setting a theme.
+Let's read in the Excel file using the `read_excel()` function and assign the dataset to the variable `October2024_Arrests`. 
+```{r}
+October2024_Arrests <- read_excel("~/Downloads/O'ahu Arrests in October 2024.xlsx")
+View(October2024_Arrests)
+```
 
-I recommend a title like this: "Topic1 and Topic2 in Location", where you fill in the topics you cover and the location you choose.
+## Craeting an Interactive Map of the Arrests Locations on the Island of O'ahu
+Now, let's create an interactive map of the arrests locations within the first seven (7) days of October 2024 using the leaflet function.
+```{r}
+leaflet() %>%
+  addTiles() %>%
+  addCircles(
+    lng = October2024_Arrests$Longitutde,
+    lat = October2024_Arrests$Latitude,
+    label = October2024_Arrests$Location,
+    color = "red"
+  )
+```
+Normally with leaflet, you use the polygons feature, but here, we are just trying to display the specific location of the arrest using. Each red dot represents an arrest that was made during the first seven (7) days in October of 2024 according to the Honolulu Police Department (HPD) Arrest Log. 
 
-Use this [guide](https://www.rstudio.com/wp-content/uploads/2015/03/rmarkdown-reference.pdf) for help with formatting your RMarkdown, for example, using bold or italics, creating headers, adding images, etc.
+Through this map, you are able to visually see where arrests are most common on the island as well as the frequency of arrests based on the seven day period. This map also displays the areas where a crime or crimes have taken place recently around the island. More specifically, according to the map, majority of the crimes that occurred within this seven (7) day period were in the Honolulu area including Chinatown, Ala Moana, Waikiki and Downtown. 
 
-### Step 2: Create your sections
+Unfortunately, not all of the arrests that occurred within this seven (7) day period is recorded on this map. As I was manually creating the spreadsheet of this data set and utilizing a website to convert the location provided on the arrest logs to longitude and latitude points, the website could not recognize some of the locations. With that said, those arrest were excluded from the data set. 
 
-Each section should have a header with the title of the section. This will organize your project, and will automatically fill your table of contents. 
+Ideally, maps like these, whether they are produced weekly or daily would be useful not only to law enforcement when strategizing patrol but also the community as they would be able to uses these maps as an educational tool in being aware of their surroundings and being vigilant. These maps could potentially contribute to lower crime rates in visualizing the areas of concern for law enforcement as well as the safety of individuals in the community due to more awareness of what is happening in their community. 
 
-Start with an introduction section, which includes an introduction to yourself, the location you are focused on, and the topics you will cover. **Include a locator map to familiarize the reader with your target area.**
+## Creating the Correctional Facilities Variable
+Now, let's take the necessary steps towards making this next interaction map of the Island of O'ahu by creating the variable "Oahu_Corrections" and assigning the dataset that contains the longitude and latitude of the correctional facilities.
 
-Create a separate section for each topic you will cover. Include an image showing which SDG is related to this topic. Each section will have at least one map (you will add your maps later in step 4.
+Let's read in the Excel file using the `read_excel()` function and assign the dataset to the variable `Oahu_Corrections`. 
+```{r}
+Oahu_Corrections <- read_excel("~/Downloads/O'ahu Correctional Facilities.xlsx")
+View(Oahu_Corrections)
+```
 
-### Step 3: Code setup
+## Craeting an Interactive Map of the Correctional Facilities on the Island of O'ahu
+Now, let's create an interactive map of the correctional facilitates on the Island of O'ahu.
+```{r}
+leaflet() %>%
+  addTiles() %>%
+  addCircles(
+    lng = Oahu_Corrections$Longitude,
+    lat = Oahu_Corrections$Latitude,
+    label = Oahu_Corrections$Facility,
+    color = "blue"
+  )
+```
+In the interactive map above, you can see the six correctional facilities across O'ahu. This data set was created manually through collecting the information of the correctional facilities and converting the location to longitude and latitude points for plotting purposes. Each blue dot represents one of the correctional facilities and if you hover over the blue dot, it will indicate which facility it is. 
 
-Add your "setup" code chunk just below the YAML header. This is where you will load all of your libraries and set any global options (add them as you need them for your data retrieval and maps). You can also make #comments about the libraries and code you use below. You want someone to be able to recreate your maps and use your code to create their own.
+Unfortunately, as there are only six correctional facilities on the Island of O'ahu, the blue dots do blend into the map, making it hard to identify when looking at the map above.
 
-### Step 4: Create your sustainability and resilience maps
+Although there are only six facilities, the Honolulu Police Department (HPD) can use this map to work with the Department of Corrections in developing a partnership around these areas for further safety and security around these facilities and areas around the island. 
 
-Using what you have learned so far in this course, create at least one "static" map and one "interactive" map for your chosen location. Start with just a rough draft. You are welcome to create more than two maps, but start with two and complete steps 5 and 6 for those before you add any more. 
+## Craeting an Interactive Map of the Arrest of the First Seven Days of October 2024 and the Correctional Facilities on the Island of O'ahu
+Now, let's create an interactive map of the correctional facilties on the Island of O'ahu.
+```{r}
+leaflet() %>%
+  addTiles() %>%
+  addCircles(
+    lng = October2024_Arrests$Longitutde,
+    lat = October2024_Arrests$Latitude,
+    label = October2024_Arrests$Location,
+    color = "red"
+  ) %>%
+  addCircles(
+    lng = Oahu_Corrections$Longitude,
+    lat = Oahu_Corrections$Latitude,
+    label = Oahu_Corrections$Facility,
+    color = "blue"
+  )
+```
+As displayed in the figure above, I combined the arrest data and the correctional facilities data to create an overlapping interactive map. 
 
-Don't reinvent the wheel if you don't have to. Use the code we have practiced with to get started, and alter the code for your location and topic. If you have draft maps from our previous exercises that work for this, use those! If you can find code online that is similar to what you want to do, use it!
+With this map, you are able to see the locations of the six correctional facilities on the Island of O'ahu along with the arrest incidents that occurred during this seven (7) day period. As you can see, not many of the crimes are near these facilities besides the Oahu Community Correctional Center, which is located in the Honolulu areas where the majority of the crimes occurred. You'll also notice that there are a handful of crimes that occurred on the west side of the island, but there is no correctional facility on that side of the island.
 
-### Step 5: Interpret and explain your maps
+With that said, these maps could contribute to the development of more correctional facilities on the island as overcrowding in the current facilities is an issue that the Hawai'i Department of Corrections currently faces. Also, as stated in the previous maps, these maps would be a useful tool in bringing awareness to the community of the crimes that occur around the island as well as valuable information for law enforcement when on patrol. More importantly, these maps will also display the areas of concern on the island and what areas need the most resources and help in keeping the community safe.
 
-Add text above and below your map that explains what we can see in the data. This is your explanation and interpretation of the data. 
-
-This should include:
-
-- Where the data came from
-- Interesting patterns in the data
-- Limitations of the data
-- Recommendations for the community to improve sustainability/resilience based on the data (call to action)
-
-### Step 6: Improve your maps
-
-Use everything you have learned about cartographic design to improve your maps. Each map should include a title and a legend. 
-
-You may want to experiment with different highlighted elements, color schemes, classification/symbology schemes, base maps, contextual data, themes, coordinate reference systems, and other elements. You may want to add a note with metadata, such as author (that's you!), data source, date of publication, explanatory text, etc. You may also want to simplify your map by removing certain elements to make it more clear. 
-
-Your goal for each map is to make it *clear, clean, and telling one story* to your reader. 
-
-### Step 7: Make more maps
-
-If you have time, try to make more maps and follow the instructions for steps 4-6 for each one.
-
-### Step 8: Clean up your R Markdown 
-
-Check for spelling and formatting mistakes, add more explanatory text, make sure you are telling a story in each section that will lead people to take action based on your map. 
-
-### Step 9: Push your final version to GitHub with a commit message saying "Finished Final Challenge."
-
-## After the Challenge: Additional Resources
-
-My hope is that after completing this course, you have some ideas about what you would like to learn next. 
-
-Here is a list of resources to help you continue your geospatial data journey:
-
-* [Spatial Data Science with R and “terra”](https://rspatial.org) Free tutorials. "These resources teach spatial data analysis and modeling with R. R is a widely used programming language and software environment for data science. R also provides unparalleled opportunities for analyzing spatial data and for spatial modeling."
-* [Spatial Data Science](https://r-spatial.org/book/) Free ebook. "This book introduces and explains the concepts underlying spatial data: points, lines, polygons, rasters, coverages, geometry attributes, data cubes, reference systems, as well as higher-level concepts including how attributes relate to geometries and how this affects analysis. ... The book aims at data scientists who want to get a grip on using spatial data in their analysis. To exemplify how to do things, it uses R."
-* [Analyzing US Census Data: Methods, Maps, and Models in R](https://walker-data.com/census-r/index.html) Free ebook. Check out the rest of this book (we only covered a few chapters) for lots of great ideas for using US Census data. "Census data is widely used in the United States across numerous research and applied fields, including education, business, journalism, and many others. Until recently, the process of working with US Census data has required the use of a wide array of web interfaces and software platforms to prepare, map, and present data products. The goal of this book is to illustrate the utility of the R programming language for handling these tasks, allowing Census data users to manage their projects in a single computing environment."
+All in all, as someone that wants to contribute towards making our community safer, using data science to conduct research and studies can help our community in making data driven decisions in making our community safer. 
